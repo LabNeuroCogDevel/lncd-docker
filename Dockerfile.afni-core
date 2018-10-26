@@ -1,0 +1,14 @@
+# https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/background_install/install_instructs/steps_linux_ubuntu.html#install-prerequisite-packages
+# afni without X11
+#   docker build -t afni-core -f Dockerfile.afni-core .
+
+FROM debian:stretch
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get update; \
+  apt-get -qy --no-install-recommends install \
+    tcsh gsl-bin netpbm libjpeg62 \
+    curl ca-certificates;\
+  curl -k -O https://afni.nimh.nih.gov/pub/dist/bin/linux_ubuntu_16_64/@update.afni.binaries; \
+  tcsh @update.afni.binaries -package linux_openmp_64; \
+}

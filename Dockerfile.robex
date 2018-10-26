@@ -1,0 +1,25 @@
+# docker build -f Docker.robex  -t robex .
+
+FROM buildpack-deps:stretch as robexbuild
+
+# GET
+RUN {\
+  apt update; \
+  apt -qy --no-install-recommends install \
+          unzip cmake \
+          libwrap0 libdcmtk-dev \
+          libinsighttoolkit4-dev libfftw3-dev;\
+  curl -L 'https://www.nitrc.org/frs/download.php/5996/ROBEXv12.source.all_platforms.zip//?i_agree=1&download_now=1' > robex-1.12.zip; \
+  unzip robex-1.12.zip; \
+  rm robex-1.12.zip;\
+}
+# BUILD
+RUN {\
+  cd ROBEX;\
+  cmake .;\
+  apt autoremove -yq;\
+}
+
+FROM debian:stretch
+COPY --from=robexbuild /ROBEX /
+CMD ["./runROBEX.sh"]
