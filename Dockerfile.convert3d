@@ -1,0 +1,12 @@
+# convert3d from provided binaires (neurodebina brings in wayland, wacom, input, x11, etc)
+#   docker build -t convert3d -f Dockerfile.convert3d .
+
+FROM debian:stretch
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get update; \
+  apt-get -qy --no-install-recommends install \
+    curl ca-certificates;\
+  mkdir /convert3d;\
+  curl -L https://sourceforge.net/projects/c3d/files/c3d/1.0.0/c3d-1.0.0-Linux-x86_64.tar.gz/download | tar -xz -C /convert3d --strip-components 1;\
+}

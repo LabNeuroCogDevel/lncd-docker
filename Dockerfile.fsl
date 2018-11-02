@@ -27,5 +27,5 @@ RUN {\
 
 # more cleanup
 Run {\
-  rm -r fsl/bin/FSLeyes fsl/data fsl*tar.gz;\
+  rm -r fsl/bin/FSLeyes fsl/data fsl*tar.gz fsl/src ;\
 }

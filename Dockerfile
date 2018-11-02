@@ -62,12 +62,43 @@ RUN {\
     tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g libstdc++6;\
 }
 
-# clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  && \
-    test -r /etc/apt/apt.conf.d/30proxy && rm /etc/apt/apt.conf.d/30proxy  || echo no proxy
-
-
 # Our code
 RUN {\
   git clone --depth=1 https://${GHTOKEN}github.com/LabNeuroCogDevel/fmri_processing_scripts.git /opt/ni_tools/fmri_processing_scripts; \
 }
+
+# # BrainWavlet
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -qy --no-install-recommends install \
+    octave liboctave-dev;\
+  cd /opt/ni_tools/fmri_processing_scripts/wavelet_despike/linux_windows;\
+  octave --eval setup;\
+}
+
+# convert3d
+# apt get convert3d brings in wayland!? libdcm8
+COPY --from=convert3d /convert3d /opt/ni_tools/c3d/
+
+# Missing stuff -- TODO: add to initial nuerodebian package install
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -qy --no-install-recommends install \
+    locales python-babel ;\
+}
+
+# setup FSLDIR and AFNI -- todo, do any of these work?
+COPY bashrc /root/.profile
+COPY bashrc /root/.bashrc
+COPY bashrc /root/.bash_profile
+
+
+
+# 
+## clean up
+#  # < 150Mb
+#  find /opt/ni_tools/afni -iname '*.BRIK*' -or -iname '*HEAD' -or -iname '*.nii.gz' | xargs -r rm
+#
+# RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  && \
+#     test -r /etc/apt/apt.conf.d/30proxy && rm /etc/apt/apt.conf.d/30proxy  || echo no proxy
+# 
