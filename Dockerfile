@@ -108,7 +108,8 @@ RUN {\
 # Rscript -e 'devtools::install_github("LabNeuroCogDevel/LNCDR")';\
 
 WORKDIR /data
-
+ENV NT="/opt/ni_tools"
+ENV PATH="$NT/fmri_processing_scripts:$NT/fsl/bin:$NT/afni:$NT/robex:$NT/c3d/bin:/usr/lib/ants:$PATH"
 # 
 ## clean up
 #  # < 150Mb
