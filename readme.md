@@ -1,17 +1,26 @@
 # lncd-docker
-attempt to dockerize `fmri_preprocess_functional` while limiting unnessary package dependiencies (X11, wayland)
+attempt to dockerize `fmri_preprocess_functional` while limiting unnessary package dependiencies
 
 N.B. Look to [neurodocker](https://github.com/kaczmarj/neurodocker) for better implementation of dockerized neuroimaging tools.
 
+## Usage
+
+```
+# mount standard templates and current data (to data) and run preprocessFunctional
+docker run -v ~/standard:/root/standard -v ./:/data preproc:devel preprocessFunctional
+```
+
 ## Complications
- * <s>BrainWavlet uses matlab. Hard to dockerize. Consider including MATLAB runtime?</s> BrainWavlet can using octave, modifcations in `fmri_processing_scripts`
- * python and R bring in X11?
- * `Dockerfile.*` could be included within main `Dockerfile`, but useful to separate for debug
+ * `standard_templates` are not included with the docker file. currently need `-v /opt/ni_tools/standard:/root/standard`. 
+ * python, R, and octave bring in X11?
+ * FSL is huge, can prune `extras` folder?
+ * `Dockerfile.*` could be included within main `Dockerfile`, but useful to separate for debug -- use `make` (see [Makefile](./master/Makefile))
+ * <s>BrainWavlet uses matlab. Hard to dockerize. Consider including MATLAB runtime?</s> BrainWavlet can use octave, modifcations in `fmri_processing_scripts`
 
 ## Included Tools and Resources; Citations
 
 * [AFNI](https://afni.nimh.nih.gov/)
-  > https://doi.org/10.1002/(SICI)1099-1492(199706/08)10:4/5<171::AID-NBM453>3.0.CO;2-L
+  > [https://doi.org/10.1002/(SICI)1099-1492(199706/08)10:4/5<171::AID-NBM453>3.0.CO;2-L)](https://doi.org/10.1002/(SICI)1099-1492(199706/08)10:4/5<171::AID-NBM453>3.0.CO;2-L)
 * [ANTs](http://stnava.github.io/ANTs/)
   > 
 * [BrainWavelet Toolbox](http://www.brainwavelet.org/downloads/brainwavelet-toolbox/)

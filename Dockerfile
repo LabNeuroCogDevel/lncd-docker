@@ -27,7 +27,7 @@ RUN {\
   apt-get update; \
   apt-get -qy --no-install-recommends install \
     r-base bzip2 binutils imagemagick bats curl  libstdc++ \
-    git ca-certificates;\
+    git ca-certificates make;\
 }
 
 # no more proxy, use neurodebian non-free and contrib
@@ -46,6 +46,33 @@ RUN {\
    ants dcm2niix; \
 }
 
+# neuro dependencies (fsl, nibable, octave)
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get update; \
+  apt-get -qy --no-install-recommends install \
+    tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g libstdc++6\
+    octave liboctave-dev \
+    locales python-babel python-future; \
+}
+## config
+# update locale so perl doesn't complain
+RUN {\
+  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen;\
+  echo "LANG=en_US.UTF-8" > /etc/locale.conf;\
+  locale-gen en_US.UTF-8;\
+}
+
+# setup FSLDIR and AFNI, path to Ants and preprocessFunctional
+COPY bashrc /etc/environment
+COPY bashrc /root/.bashrc  
+# .bashrc for root doesn't actually work
+
+# copy in templates
+# shuld use mounted volumes -- but we've already got so much junk
+# will not work: all files must be in . (symlinks fail)
+# COPY standard_templates /opt/ni_tools/
+
 # AFNI -- to avoid X11 depends
 COPY --from=afni /root/abin /opt/ni_tools/afni/
 
@@ -53,46 +80,34 @@ COPY --from=afni /root/abin /opt/ni_tools/afni/
 COPY --from=robex /ROBEX /opt/ni_tools/robex/
 
 # FSL
+# TODO: limit what comes in. dont need all of it!
 COPY --from=fsl /fsl /opt/ni_tools/fsl/
-
-# neuro dependencies (fsl)
-RUN {\
-  export DEBIAN_FRONTEND=noninteractive; \
-  apt-get -qy --no-install-recommends install \
-    tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g libstdc++6;\
-}
-
-# Our code
-RUN {\
-  git clone --depth=1 https://${GHTOKEN}github.com/LabNeuroCogDevel/fmri_processing_scripts.git /opt/ni_tools/fmri_processing_scripts; \
-}
-
-# # BrainWavlet
-RUN {\
-  export DEBIAN_FRONTEND=noninteractive; \
-  apt-get -qy --no-install-recommends install \
-    octave liboctave-dev;\
-  cd /opt/ni_tools/fmri_processing_scripts/wavelet_despike/linux_windows;\
-  octave --eval setup;\
-}
 
 # convert3d
 # apt get convert3d brings in wayland!? libdcm8
 COPY --from=convert3d /convert3d /opt/ni_tools/c3d/
 
-# Missing stuff -- TODO: add to initial nuerodebian package install
+# get language depends
 RUN {\
-  export DEBIAN_FRONTEND=noninteractive; \
-  apt-get -qy --no-install-recommends install \
-    locales python-babel ;\
+  cpanp install App::AFNI::SiemensPhysio;\
+  PERL_MM_USE_DEFAULT=1 cpan install App::AFNI::SiemensPhysio;\
+  Rscript -e 'install.packages("orthopolynom",repos="http://cran.us.r-project.org")';\
 }
 
-# setup FSLDIR and AFNI -- todo, do any of these work?
-COPY bashrc /root/.profile
-COPY bashrc /root/.bashrc
-COPY bashrc /root/.bash_profile
+# Our code
+# + BrainWavlet octave setup
+RUN {\
+  mkdir /data; \
+  git clone --depth=1 https://${GHTOKEN}github.com/LabNeuroCogDevel/fmri_processing_scripts.git /opt/ni_tools/fmri_processing_scripts; \
+  cd /opt/ni_tools/fmri_processing_scripts/wavelet_despike/linux_windows;\
+  octave --eval setup;\
+}
 
+# need libcurl?
+# Rscript -e 'install.packages("devtools",repos="http://cran.us.r-project.org")';\
+# Rscript -e 'devtools::install_github("LabNeuroCogDevel/LNCDR")';\
 
+WORKDIR /data
 
 # 
 ## clean up
