@@ -1,0 +1,61 @@
+#
+# use fmriprep as a base. already bundles many dependencies
+# 14.1GB (20200623)
+#
+FROM poldracklab/fmriprep
+
+# packaged dependencies not in fmriprep
+# TODO: locale-gen fails, but doesn't seem to cause any issues
+RUN {\
+  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen;\
+  echo "LANG=en_US.UTF-8" > /etc/locale.conf;\
+  locale-gen en_US.UTF-8;\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get update; \
+  apt-get -qy --no-install-recommends install \
+    octave liboctave-dev;\
+  apt-get -qy --no-install-recommends install \
+    r-base imagemagick bats;\
+}
+
+# ROBEX
+## GET
+RUN {\
+  apt -qy --no-install-recommends install \
+          unzip cmake \
+          libwrap0 libdcmtk-dev \
+          libinsighttoolkit4-dev libfftw3-dev;\
+  curl -L 'https://www.nitrc.org/frs/download.php/5996/ROBEXv12.source.all_platforms.zip//?i_agree=1&download_now=1' > robex-1.12.zip; \
+  unzip robex-1.12.zip; \
+  rm robex-1.12.zip;\
+  cd ROBEX;\
+  cmake .;\
+  apt autoremove -yq;\
+}
+
+
+# get language depends
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  Rscript -e 'install.packages("orthopolynom",repos="http://cran.us.r-project.org")';\
+  PERL_MM_USE_DEFAULT=1 cpan install App::AFNI::SiemensPhysio;\
+  python3 -m pip install nipy  git+https://github.com/rtrhd/ICA-AROMA;\
+}
+
+
+# Our code
+# + BrainWavlet octave setup
+RUN {\
+  mkdir /data; \
+  git clone --depth=1 https://github.com/LabNeuroCogDevel/fmri_processing_scripts.git /opt/ni_tools/fmri_processing_scripts; \
+  cd /opt/ni_tools/fmri_processing_scripts/wavelet_despike/linux_windows;\
+  octave --eval setup;\
+}
+
+# need libcurl?
+# Rscript -e 'install.packages("devtools",repos="http://cran.us.r-project.org")';\
+# Rscript -e 'devtools::install_github("LabNeuroCogDevel/LNCDR")';\
+
+WORKDIR /data
+ENV PATH="/opt/ni_tools/fmri_processing_scripts:$PATH"
+ENTRYPOINT []

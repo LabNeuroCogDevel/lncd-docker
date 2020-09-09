@@ -1,0 +1,27 @@
+# docker build -f Docker.robex  -t robex .
+
+# also see:
+#  https://github.com/ANTsX/ANTs/wiki/Compiling-ANTs-on-Linux-and-Mac-OS
+#  https://github.com/kaczmarj/ANTs-builds (centos)
+
+FROM buildpack-deps:stable as build
+
+# GET
+RUN {\
+  apt update; \
+  apt -qy --no-install-recommends install git cmake;\
+  git clone https://github.com/ANTsX/ANTs.git /src;\
+}
+# BUILD
+RUN {\
+  mkdir build ANTs-bin;\
+  cd build;\
+  cmake -DCMAKE_INSTALL_PREFIX=/ANTs-bin /src;\
+  make;\
+  cd ANTS-build;\
+  make install;\
+}
+
+FROM debian:stable-min
+COPY --from=build /ANTs-bin /ANTs
+ENV PATH="/ANTS:$PATH"

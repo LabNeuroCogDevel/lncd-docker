@@ -1,31 +1,21 @@
-FROM debian:stretch
+FROM debian:stable-slim
 
 # setup 
 RUN {\
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get update; \
   apt-get -qy --no-install-recommends install \
-    python curl ca-certificates;\
-  curl -k -O -L https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py;\
+    python curl ca-certificates\
+    tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g libstdc++6;\
+  apt-get clean;\
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;\
 }
 
 # install
 RUN {\
+  curl -k -O -L https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py;\
   python fslinstaller.py -o;\
   tar -zxvf fsl*.tar.gz;\
-}
-
-# depends and cleanup
-RUN {\
-  export DEBIAN_FRONTEND=noninteractive; \
-  apt-get -qy --no-install-recommends install \
-    tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g libstdc++6;\
-  apt-get clean;\
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;\
-  test -r /etc/apt/apt.conf.d/30proxy && rm /etc/apt/apt.conf.d/30proxy  || echo no proxy;\
-}
-
-# more cleanup
-Run {\
-  rm -r fsl/bin/FSLeyes fsl/data fsl*tar.gz fsl/src ;\
+  rm fsl*.tar.gz || :;\
+  rm -r fsl/bin/FSLeyes fsl/src || :;\
 }

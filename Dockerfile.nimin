@@ -1,0 +1,82 @@
+# create with:
+#   docker build -t "nimin" . 
+
+FROM robex:latest as robex
+FROM fsl:latest as fsl
+
+FROM afni/afni:latest as afni
+#FROM afni-core:latest as afni
+# Instead of our own, use container maitnained by afni (built with neurodocker ?)
+# binaries in /opt/abin/ 
+# cf. bids/base_afni (uses neurodebian package)
+
+FROM antsx/ants:latest as ants
+# cf. https://github.com/kaczmarj/ANTs-builds (centos)
+#     Dockerfile.ants
+
+# stable = buster = 10 (20200623)
+# buster hardcoded in neurodebian source list. has no "stable"
+FROM debian:stable-slim
+
+ENV LANG="en_US.UTF-8" LC_ALL="en_US.UTF-8"
+
+
+# convert3d
+# apt get convert3d brings in wayland!? libdcm8
+COPY --from=convert3d /convert3d /opt/ni_tools/c3d/
+# ROBEX
+COPY --from=robex /ROBEX /opt/ni_tools/robex/
+
+# AFNI -- to avoid X11 depends
+COPY --from=afni /opt/abin /opt/ni_tools/afni/
+
+# FSL
+# TODO: limit what comes in. dont need all of it!
+COPY --from=fsl /fsl /opt/ni_tools/fsl/
+COPY --from=ants /opt/ants/ /opt/ni_tools/ANTs
+
+## grab all depends we might need
+# use neurodebian non-free and contrib
+# doParallel and robust required by ROITempCorr
+RUN {\
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get update; apt-get -qy install gnupg2 curl locales;\
+  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen;\
+  echo "LANG=en_US.UTF-8" > /etc/locale.conf;\
+  locale-gen en_US.UTF-8;\
+  \
+  curl -kL http://neuro.debian.net/lists/buster.us-tn.full > /etc/apt/sources.list.d/neurodebian.sources.list ;\
+  apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9;\
+  sed -i 's/main *$/main contrib non-free/g' /etc/apt/sources.list.d/neurodebian.sources.list;\
+  apt-get update; \
+  \
+  apt-get -qy --no-install-recommends install \
+   bzip2 binutils imagemagick bats \
+   git ca-certificates make\
+   dcm2niix \
+   tcsh libnewmat10ldbl libnifti2 bc dc libpng16-16 zlib1g\
+   octave liboctave-dev \
+   python-babel python-future python3 \
+   r-base jq \
+   libcurl4-openssl-dev \
+   python3-pip python3-setuptools;\
+  python3 -m pip install nipy  git+https://github.com/rtrhd/ICA-AROMA;\
+  PERL_MM_USE_DEFAULT=1 cpan install App::AFNI::SiemensPhysio;\
+  Rscript -e 'install.packages(c("orthopolynom","abind","oro.nifti","doParallel","robust", "forecast"),repos="http://lib.stat.cmu.edu/R/CRAN")';\
+}
+
+
+# copy in templates
+# should use mounted volumes -- but we already got so much junk
+# will not work: all files must be in . (symlinks fail)
+# COPY standard_templates /opt/ni_tools/
+
+WORKDIR /data
+ENV NT="/opt/ni_tools"
+ENV PATH="$NT/fmri_processing_scripts:$NT/fsl/bin:$NT/afni:$NT/robex:$NT/c3d/bin:$NT/ANTs/bin:$PATH"
+
+# setup FSLDIR and AFNI, path to Ants and preprocessFunctional
+COPY bashrc /etc/environment
+COPY bashrc /root/.bashrc  
+COPY bashrc /etc/profile.d/ni.sh
+# .bashrc for root doesn't actually work

@@ -2,7 +2,7 @@
 # afni without X11
 #   docker build -t afni-core -f Dockerfile.afni-core .
 
-FROM debian:stretch
+FROM debian:stable-slim
 RUN {\
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get update; \
