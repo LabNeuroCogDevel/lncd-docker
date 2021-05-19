@@ -4,11 +4,9 @@
 FROM robex:latest as robex
 FROM fsl:latest as fsl
 
-FROM afni/afni:latest as afni
-#FROM afni-core:latest as afni
-# Instead of our own, use container maitnained by afni (built with neurodocker ?)
-# binaries in /opt/abin/ 
-# cf. bids/base_afni (uses neurodebian package)
+#FROM afni/afni as afni # discontinued?
+#FROM bids/base_afni as afni # OLD
+FROM lncd/afni:latest as afni
 
 FROM antsx/ants:latest as ants
 # cf. https://github.com/kaczmarj/ANTs-builds (centos)
@@ -60,7 +58,7 @@ RUN {\
    r-base jq \
    libcurl4-openssl-dev \
    python3-pip python3-setuptools;\
-  python3 -m pip install nipy  git+https://github.com/rtrhd/ICA-AROMA;\
+  python3 -m pip install nipy git+https://github.com/WillForan/ICA-AROMA.git@maartenmennes-setup.py;\
   PERL_MM_USE_DEFAULT=1 cpan install App::AFNI::SiemensPhysio;\
   Rscript -e 'install.packages(c("orthopolynom","abind","oro.nifti","doParallel","robust", "forecast"),repos="http://lib.stat.cmu.edu/R/CRAN")';\
 }

@@ -1,4 +1,5 @@
 all:
+	docker build -t lncd/afni -f Dockerfile.afni-core .
 	docker build -t robex     -f Dockerfile.robex .
 	docker build -t fsl       -f Dockerfile.fsl .
 	docker build -t convert3d -f Dockerfile.convert3d .

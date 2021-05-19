@@ -9,6 +9,6 @@ RUN {\
   apt-get -qy --no-install-recommends install \
     tcsh gsl-bin netpbm libjpeg62 \
     curl ca-certificates;\
-  curl -k -O https://afni.nimh.nih.gov/pub/dist/bin/linux_ubuntu_16_64/@update.afni.binaries; \
-  tcsh @update.afni.binaries -package linux_openmp_64; \
+  curl -k -O https://afni.nimh.nih.gov/pub/dist/bin/misc/@update.afni.binaries; \
+  tcsh @update.afni.binaries -package linux_openmp_64 -bindir /opt/abin; \
 }
